@@ -1,9 +1,9 @@
 import { InputType, Field } from '@nestjs/graphql';
 
 @InputType()
-export class CreateBookingDto {
+export class CancelBookingDto {
   @Field()
-  serviceId: string;
+  bookingId: string;
 
   @Field()
   date: string;

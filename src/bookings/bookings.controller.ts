@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, UseGuards } from '@nestjs/common';
 import { CognitoHttpGuard } from 'src/auth/cognito.http.guard';
 import { BookingsService } from './bookings.service';
-import { CreateBookingInput } from './dto/create-booking.input';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { CurrentUser } from 'src/users/users.resolver';
 import { CurrentRESTUser } from 'src/users/users.controller';
+import { CancelBookingDto } from './dto/cancel-booking.dto';
 
 @UseGuards(CognitoHttpGuard)
 @Controller('bookings')
@@ -18,26 +17,13 @@ export class BookingsController {
 
   @Get()
   findAll(@CurrentRESTUser() user: any) {
+    console.log('huh?', user);
     return this.bookingsService.findByUser(user.sub);
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.vehiclesService.findOne(+id);
-  // }
-  //
-  // @Get('user/:id')
-  // findByUser(@Param('id') id: string) {
-  //   return this.vehiclesService.findByUser(+id);
-  // }
-  //
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
-  //   return this.vehiclesService.update(+id, updateVehicleDto);
-  // }
-  //
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.vehiclesService.remove(+id);
-  // }
+  @Patch()
+  cancel(@CurrentRESTUser() user: any, @Body() cancelBookingDto: CancelBookingDto) {
+    return this.bookingsService.cancel(user.sub, cancelBookingDto.bookingId, cancelBookingDto.date, cancelBookingDto.timeSlot);
+  }
+
 }

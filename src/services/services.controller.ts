@@ -16,7 +16,6 @@ export class ServicesController {
 
   @Get()
   findAll(@CurrentRESTUser() user: any) {
-    console.log('upa ?????', user);
     return this.servicesService.findAll();
   }
 

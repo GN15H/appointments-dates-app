@@ -26,7 +26,6 @@ export class ServicesService {
 
   async findAll(): Promise<Service[]> {
     const items = await this.dynamo.scan();
-    console.log('uy mano esto si son items', items as Service[]);
     return items.filter(i => i.pk?.startsWith('SERVICE#')) as Service[];
   }
 

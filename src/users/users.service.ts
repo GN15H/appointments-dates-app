@@ -1,17 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { DynamoService } from '../dynamo/dynamo.service';
 import { User } from './entities/user.entity';
-import { CreateUserDto } from './dto/user.dto';
+// import { CreateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private dynamo: DynamoService) { }
 
   async findOrCreate(cognitoUser: any): Promise<User> {
-    console.log('tf is this shit', cognitoUser);
     const id = cognitoUser.sub;
     const existing = await this.dynamo.get(`USER#${id}`, 'PROFILE');
-    console.log('existe?', existing);
 
     if (existing) return existing as User;
 

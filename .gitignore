@@ -2,6 +2,9 @@
 
 /dist
 
+signin.sh
+id_token.txt
+
 packages/*/package-lock.json
 sample/**/package-lock.json
 

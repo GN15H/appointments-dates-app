@@ -16,7 +16,7 @@ export class CognitoGqlGuard implements CanActivate {
     this.verifier = CognitoJwtVerifier.create({
       userPoolId: this.configService.get<string>('COGNITO_USER_POOL_ID')!,
       clientId: this.configService.get<string>('COGNITO_CLIENT_ID')!,
-      tokenUse: 'access',
+      tokenUse: 'id',
     });
   }
 

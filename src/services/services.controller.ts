@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { ServicesService } from './services.service';
 import { CreateServiceInput } from './dto/create-service.input';
 import { CognitoHttpGuard } from 'src/auth/cognito.http.guard';
+import { CurrentRESTUser } from 'src/users/users.controller';
 
 @UseGuards(CognitoHttpGuard)
 @Controller('services')
@@ -14,7 +15,8 @@ export class ServicesController {
   }
 
   @Get()
-  findAll() {
+  findAll(@CurrentRESTUser() user: any) {
+    console.log('upa ?????', user);
     return this.servicesService.findAll();
   }
 

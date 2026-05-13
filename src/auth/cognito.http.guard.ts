@@ -17,24 +17,28 @@ export class CognitoHttpGuard implements CanActivate {
     this.verifier = CognitoJwtVerifier.create({
       userPoolId: this.configService.get<string>('COGNITO_USER_POOL_ID')!,
       clientId: this.configService.get<string>('COGNITO_CLIENT_ID')!,
-      tokenUse: 'access',
+      tokenUse: 'id',
     });
   }
 
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
+    console.log('ke puta e e eto', request.rawHeaders)
     const token = this.extractTokenFromHeader(request);
+    console.log('tan solo el token', token);
     if (!token) {
       throw new UnauthorizedException();
     }
     console.log('mm el token?', token)
     try {
       const payload = await this.verifier.verify(token);
+      request.user = payload;
       console.log('tf is this shite?', payload);
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
+
     return true;
   }
 

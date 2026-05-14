@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DynamoService } from '../dynamo/dynamo.service';
 import { Service } from './entities/service.entity';
 import { CreateServiceInput } from './dto/create-service.input';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class ServicesService {
@@ -10,7 +10,7 @@ export class ServicesService {
 
   async create(input: CreateServiceInput): Promise<Service> {
     const service: Service = {
-      id: uuidv4(),
+      id: randomUUID(),
       ...input,
       createdAt: new Date().toISOString(),
     };
@@ -26,7 +26,7 @@ export class ServicesService {
 
   async findAll(): Promise<Service[]> {
     const items = await this.dynamo.scan();
-    return items.filter(i => i.pk?.startsWith('SERVICE#')) as Service[];
+    return items.filter(i => i.pk?.startsWith('SERVICE#') && i.sk?.startsWith('META')) as Service[];
   }
 
   async findById(id: string): Promise<Service | null> {

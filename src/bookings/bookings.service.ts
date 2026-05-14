@@ -2,7 +2,7 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { DynamoService } from '../dynamo/dynamo.service';
 import { Booking } from './entities/booking.entity';
 import { CreateBookingInput } from './dto/create-booking.input';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class BookingsService {
@@ -17,7 +17,7 @@ export class BookingsService {
     const active = existing.filter(i => i.status !== 'cancelled');
     if (active.length > 0) throw new ConflictException('That time slot is already booked');
 
-    const id = uuidv4();
+    const id = randomUUID();
     const booking: Booking = {
       id,
       userId,

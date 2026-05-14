@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { DynamoService } from '../dynamo/dynamo.service';
 import { Booking } from './entities/booking.entity';
 import { CreateBookingInput } from './dto/create-booking.input';
@@ -14,9 +14,8 @@ export class BookingsService {
       `BOOKING#${input.date}#${input.timeSlot}`,
     );
 
-    if (existing.length > 0) {
-      throw new ConflictException('That time slot is already booked');
-    }
+    const active = existing.filter(i => i.status !== 'cancelled');
+    if (active.length > 0) throw new ConflictException('That time slot is already booked');
 
     const id = uuidv4();
     const booking: Booking = {
@@ -51,17 +50,18 @@ export class BookingsService {
   }
 
   async cancel(userId: string, bookingId: string, date: string, timeSlot: string): Promise<Booking> {
-    await this.dynamo.update(
-      `USER#${userId}`,
-      `BOOKING#${date}#${timeSlot}#${bookingId}`,
-      { status: 'cancelled' },
-    );
+    const userSk = `BOOKING#${date}#${timeSlot}#${bookingId}`;
+    const serviceSk = `BOOKING#${date}#${timeSlot}`;
 
-    const item = await this.dynamo.get(
-      `USER#${userId}`,
-      `BOOKING#${date}#${timeSlot}#${bookingId}`,
-    );
+    const existing = await this.dynamo.get(`USER#${userId}`, userSk);
+    if (!existing) throw new NotFoundException('Booking not found');
+    if (existing.status === 'cancelled') throw new ConflictException('Booking is already cancelled');
 
-    return item as Booking;
+    await Promise.all([
+      this.dynamo.update(`USER#${userId}`, userSk, { status: 'cancelled' }),
+      this.dynamo.update(`SERVICE#${existing.serviceId}`, serviceSk, { status: 'cancelled' }),
+    ]);
+
+    return { ...existing, status: 'cancelled' } as Booking;
   }
 }

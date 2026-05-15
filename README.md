@@ -104,8 +104,10 @@ query {
   }
 }
 ```
-REST
+
+```REST
 GET /bookings
+```
 
 
 ### Mutations
@@ -125,8 +127,9 @@ mutation {
 }
 ```
 
-REST
+```REST
 POST /services
+```
 ```json
 {   
     "name": "Haircut",
@@ -151,8 +154,9 @@ mutation {
 }
 ```
 
-REST
+```REST
 POST /bookings
+```
 ```json
 {
     "serviceId": "your-service-id",
@@ -176,8 +180,9 @@ mutation {
 }
 ```
 
-REST
+```REST
 PATCH /bookings
+```
 ```json
 {
     "bookingId": "your-booking-id",
@@ -256,7 +261,7 @@ Deploys to AWS via Serverless Framework — creates Lambda, API Gateway, IAM rol
 
 **Why single-table DynamoDB?** DynamoDB doesn't support joins. Single-table design co-locates related data so any access pattern resolves in a single query with no additional round trips.
 
-**Why two rows per booking?** One row under `USER#id` enables "get all bookings for a user" queries. A second row under `SERVICE#id` acts as a slot lock — checking availability before creating a booking is an O(1) lookup regardless of how many total bookings exist.
+**Why two rows per booking?** One row under `USER#id` enables "get all bookings for a user" queries. A second row under `SERVICE#id` acts as a slot lock, checking availability before creating a booking is an O(1) lookup regardless of how many total bookings exist.
 
 **Why IdToken instead of AccessToken?** The IdToken carries user attributes (email, name) issued by Cognito at login. The AccessToken only carries session claims. Since the API needs user attributes to create profiles on first login, IdToken is the right choice here.
 

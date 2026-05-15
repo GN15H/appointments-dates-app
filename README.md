@@ -1,98 +1,269 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# BookFlow API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A GraphQL and REST API for managing service bookings. Built to demonstrate production-ready serverless architecture on AWS.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> A business (barbershop, sports school, clinic, etc.) can list their services, and clients can book, view, and cancel appointments through a fully authenticated API.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+- **NestJS** Node.js framework with modular architecture
+- **GraphQL** API query language with code-first schema generation
+- **AWS Lambda** Serverless compute via Serverless Framework
+- **AWS API Gateway** HTTP entry point routing requests to Lambda
+- **AWS DynamoDB** NoSQL database using single-table design
+- **AWS Cognito** User authentication and JWT token management
+- **TypeScript** Full type safety across the codebase
 
-```bash
-$ npm install
+---
+
+## Architecture
+
+```
+Client
+  │
+  ▼
+API Gateway  (HTTP entry point)
+  │
+  ▼
+Lambda  (NestJS app via serverless-express)
+  ├── CognitoGuard  (validates JWT on every request)
+  ├── UsersResolver
+  ├── ServicesResolver
+  └── BookingsResolver
+        ├── DynamoDB  (single-table design)
+        └── Cognito   (user attribute lookup)
 ```
 
-## Compile and run the project
+### DynamoDB Single-Table Design
 
-```bash
-# development
-$ npm run start
+All entities live in one table with composite keys:
 
-# watch mode
-$ npm run start:dev
+| pk | sk | Entity |
+|---|---|---|
+| `USER#<id>` | `PROFILE` | User profile |
+| `SERVICE#<id>` | `META` | Offered service |
+| `USER#<id>` | `BOOKING#<date>#<time>#<id>` | Booking (user view) |
+| `SERVICE#<id>` | `BOOKING#<date>#<time>` | Booking (slot lock) |
 
-# production mode
-$ npm run start:prod
+Each booking writes two rows. One under the user for history queries, one under the service to prevent double-booking, and service-based querying without table scans.
+
+---
+
+## API Reference
+
+All queries and mutations require a `Bearer` token from AWS Cognito in the `Authorization` header. The GraphQL endpoint is at /graphql proxy.
+
+### Queries
+
+**Get current user profile**
+```graphql
+query {
+  me {
+    id
+    email
+    name
+    role
+    createdAt
+  }
+}
 ```
 
-## Run tests
+```REST
+GET /users
+```
+
+**List all services**
+```graphql
+query {
+  services {
+    id
+    name
+    description
+    price
+    durationMinutes
+  }
+}
+```
+
+```REST
+GET /services
+```
+
+**Get my bookings**
+```graphql
+query {
+  myBookings {
+    id
+    serviceId
+    date
+    timeSlot
+    status
+    createdAt
+  }
+}
+```
+REST
+GET /bookings
+
+
+### Mutations
+
+**Create a service**
+```graphql
+mutation {
+  createService(input: {
+    name: "Haircut"
+    description: "Classic 30-minute haircut"
+    price: 25000
+    durationMinutes: 30
+  }) {
+    id
+    name
+  }
+}
+```
+
+REST
+POST /services
+```json
+{   
+    "name": "Haircut",
+    "description": "Classic 30-minute haircut",
+    "price": 25000,
+    "durationMinutes": 30
+}
+```
+**Book an appointment**
+```graphql
+mutation {
+  createBooking(input: {
+    serviceId: "your-service-id"
+    date: "2024-11-15"
+    timeSlot: "10:00"
+  }) {
+    id
+    status
+    date
+    timeSlot
+  }
+}
+```
+
+REST
+POST /bookings
+```json
+{
+    "serviceId": "your-service-id",
+    "date": "2024-11-15",
+    "timeSlot": "10:00"
+}
+```
+
+
+**Cancel a booking**
+```graphql
+mutation {
+  cancelBooking(
+    bookingId: "your-booking-id"
+    date: "2024-11-15"
+    timeSlot: "10:00"
+  ) {
+    id
+    status
+  }
+}
+```
+
+REST
+PATCH /bookings
+```json
+{
+    "bookingId": "your-booking-id",
+    "date": "2024-11-15",
+    "timeSlot": "10:00"
+}
+```
+
+---
+
+## Running Locally
+
+### Prerequisites
+
+- Node.js 20+
+- AWS CLI configured with a valid profile
+- An AWS Cognito User Pool
+
+### Setup
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+git clone https://github.com/yourusername/bookflow-api
+cd bookflow-api
+npm install
 ```
+
+Create a `.env` file in the root:
+
+```env
+COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
+COGNITO_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXXXX
+COGNITO_REGION=us-east-1
+DYNAMO_TABLE_NAME=bookflow
+AWS_REGION=us-east-1
+AWS_PROFILE=XXXXXXXXXXX
+```
+
+Start the server:
+
+```bash
+npm run start:dev
+```
+
+GraphQL playground available at `http://localhost:3000/graphql`
+
+### Getting a token
+
+```bash
+aws cognito-idp initiate-auth \
+  --auth-flow USER_PASSWORD_AUTH \
+  --auth-parameters USERNAME=your@email.com,PASSWORD=yourpassword \
+  --client-id YOUR_CLIENT_ID \
+  --query 'AuthenticationResult.IdToken' \
+  --output text
+```
+
+Use the token in the playground headers:
+
+```json
+{ "Authorization": "Bearer <your-token>" }
+```
+
+---
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run deploy
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Deploys to AWS via Serverless Framework — creates Lambda, API Gateway, IAM roles, and CloudWatch log groups automatically through CloudFormation.
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Key Design Decisions
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+**Why single-table DynamoDB?** DynamoDB doesn't support joins. Single-table design co-locates related data so any access pattern resolves in a single query with no additional round trips.
 
-## Support
+**Why two rows per booking?** One row under `USER#id` enables "get all bookings for a user" queries. A second row under `SERVICE#id` acts as a slot lock — checking availability before creating a booking is an O(1) lookup regardless of how many total bookings exist.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+**Why IdToken instead of AccessToken?** The IdToken carries user attributes (email, name) issued by Cognito at login. The AccessToken only carries session claims. Since the API needs user attributes to create profiles on first login, IdToken is the right choice here.
 
-## Stay in touch
+**Why NestJS inside Lambda?** NestJS is designed for long-lived servers but adapts cleanly to Lambda via `serverless-express`. The modular architecture (guards, resolvers, services) keeps the codebase organized as it grows, which wouldn't be the case with a bare Lambda function.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)
+![GraphQL](https://img.shields.io/badge/GraphQL-E10098?style=flat&logo=graphql&logoColor=white)
+![AWS Lambda](https://img.shields.io/badge/AWS_Lambda-FF9900?style=flat&logo=awslambda&logoColor=white)
+![DynamoDB](https://img.shields.io/badge/DynamoDB-4053D6?style=flat&logo=amazondynamodb&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)

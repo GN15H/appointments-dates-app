@@ -1,3 +1,5 @@
+frameworkVersion: '3'
+
 service: bookflow-api
 
 provider:

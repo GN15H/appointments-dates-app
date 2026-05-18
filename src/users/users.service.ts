@@ -30,29 +30,6 @@ export class UsersService {
     return user;
   }
 
-  // async httpCreate(user: CreateUserDto): Promise<User> {
-  //   const id = cognitoUser.sub;
-  //   const existing = await this.dynamo.get(`USER#${id}`, 'PROFILE');
-  //
-  //   if (existing) return existing as User;
-  //
-  //   const user: User = {
-  //     id,
-  //     email: cognitoUser.email,
-  //     name: cognitoUser.name ?? 'Unknown',
-  //     role: 'client',
-  //     createdAt: new Date().toISOString(),
-  //   };
-  //
-  //   await this.dynamo.put({
-  //     pk: `USER#${id}`,
-  //     sk: 'PROFILE',
-  //     ...user,
-  //   });
-  //
-  //   return user;
-  // }
-
   async findById(id: string): Promise<User | null> {
     const item = await this.dynamo.get(`USER#${id}`, 'PROFILE');
     return item as User ?? null;

@@ -1,3 +1,4 @@
+![CI/CD](https://github.com/GN15H/appointments-dates-app/actions/workflows/deploy.yml/badge.svg)
 # BookFlow API
 
 A GraphQL and REST API for managing service bookings. Built to demonstrate production-ready serverless architecture on AWS.

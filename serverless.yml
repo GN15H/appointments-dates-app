@@ -6,7 +6,6 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
-  profile: bookflow-backend
   state: ${opt:stage, 'dev'}
   environment:
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}

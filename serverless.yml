@@ -1,0 +1,49 @@
+service: bookflow-api
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  profile: bookflow-backend
+  state: ${opt:stage, 'dev'}
+  environment:
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+    COGNITO_REGION: ${env:COGNITO_REGION}
+    DYNAMO_TABLE_NAME: ${env:DYNAMO_TABLE_NAME}
+    AWS_REGION_NAME: us-east-1
+    # AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID}
+    # AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:us-east-1:*:table/bookflow
+        - Effect: Allow
+          Action:
+            - cognito-idp:GetUser
+          Resource: "*"
+
+functions:
+  api:
+    handler: dist/lambda.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+
+plugins:
+  - serverless-offline

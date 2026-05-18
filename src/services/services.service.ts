@@ -29,7 +29,7 @@ export class ServicesService {
     return items.filter(i => i.pk?.startsWith('SERVICE#') && i.sk?.startsWith('META')) as Service[];
   }
 
-  async findByService(id:string): Promise<Service[]>{
+  async findByService(id: string): Promise<Service[]> {
     const items = await this.dynamo.query(`SERVICE#${id}`, 'BOOKING#');
     return items as Service[];
   }

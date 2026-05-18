@@ -45,7 +45,6 @@ export class BookingsService {
 
   async findByUser(userId: string): Promise<Booking[]> {
     const items = await this.dynamo.query(`USER#${userId}`, 'BOOKING#');
-    console.log('what?', items);
     return items as Booking[];
   }
 

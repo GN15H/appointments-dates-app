@@ -17,7 +17,6 @@ export class BookingsController {
 
   @Get()
   findAll(@CurrentRESTUser() user: any) {
-    console.log('huh?', user);
     return this.bookingsService.findByUser(user.sub);
   }
 

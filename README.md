@@ -1,4 +1,40 @@
 ![CI/CD](https://github.com/GN15H/appointments-dates-app/actions/workflows/deploy.yml/badge.svg)
+## CI/CD Pipeline
+
+Every push to `main` automatically triggers the deployment pipeline via GitHub Actions.
+
+### Pipeline steps
+
+```
+Push to main
+    │
+    ▼
+Install dependencies (npm ci)
+    │
+    ▼
+Build (nest build)
+    │
+    ▼
+Run unit tests
+    │
+    ▼
+Deploy to AWS Lambda (Serverless Framework v3)
+```
+
+### What it does
+
+- **Dependencies** — installs exact versions from `package-lock.json` for reproducible builds
+- **Build** — compiles TypeScript to JavaScript via NestJS compiler
+- **Tests** — runs unit tests and blocks deploy if any fail
+- **Deploy** — provisions and updates AWS infrastructure automatically through CloudFormation
+
+### Branch strategy
+
+- `main` — production branch, protected. Every push triggers a full deploy
+- `dev` — development branch, work happens here before merging to main
+
+> Deploy only happens if all previous steps pass — a failing test prevents a broken build from reaching production.
+
 # BookFlow API
 
 A GraphQL and REST API for managing service bookings. Built to demonstrate production-ready serverless architecture on AWS.

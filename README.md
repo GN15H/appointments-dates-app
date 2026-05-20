@@ -241,8 +241,8 @@ PATCH /bookings
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/bookflow-api
-cd bookflow-api
+git clone https://github.com/GN15H/appointments-dates-app
+cd appointments-dates-app
 npm install
 ```
 
